@@ -21,3 +21,28 @@ This project was made in the 2020/2021 Autumn semester for a course on Artificia
     <li>Convert the numbers and symbols into a python mathematical operation.</li>
     <li>Print the mathematical operation </li>
 </ol>
+
+# Data Preparation
+
+To build an AI that recognizes numbers and basic math symbols, we used a dataset from Kaggle by the name of [Handwritten math symbols dataset](https://www.kaggle.com/xainano/handwrittenmathsymbols). This dataset consists of jpg files (45x45 pixels) of all numbers and different math symbols. 
+
+Since we are doing operations with only basic symbols and numbers, we used the following categories of pictures from the dataset:
+
+- Subtraction operator **-**
+- Factorial **!**
+- Parentheses **()**
+- Decimal Separator **,**
+- Addition Operator **+**
+- Equals Operator **=**
+- Numbers **0 - 9**
+- Variables **a, b and c**
+- Division Operator **:** (mostly with a line between the two dots) or **/**
+- Logarithmic Operator **log**
+- **Pi**
+- Sinus Operator **sin**
+- Cosinus Operator **cos**
+- Tangent Operator **tan**
+- Multiplication Operator **x**
+- Variables **x, y and z**
+
+It also turned out from [a forum post on Kaggle](https://www.kaggle.com/xainano/handwrittenmathsymbols/discussion/85277) that the dataset contained many duplicates (up to 80%!). So we used a script from the same post to delete the duplicates and therefore clean the data. The training data, the data cleaning script and the log of the script can be found in the 'dev' branch of this project.
