@@ -75,16 +75,45 @@ while True:
 
             elif values["-OPENCV-"]:
                 
-                print("in opencv")
+
+                # https://stackoverflow.com/questions/24385714/detect-text-region-in-image-using-opencv
+
+
 
                 img = cv2.imread(filename)
                 img2gray = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)[:,:,0]
+                ret, mask = cv2.threshold(img2gray, 180, 255, cv2.THRESH_BINARY)
+                image_final = cv2.bitwise_and(img2gray, img2gray, mask=mask)
+                ret, new_img = cv2.threshold(image_final, 180, 255, cv2.THRESH_BINARY) # for black text , cv.THRESH_BINARY_INV
+
+                print("Before kernel")
+                kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (3,
+                                                         3))  # to manipulate the orientation of dilution , large x means horizonatally dilating  more, large y means vertically dilating more
+                
+                print("After kernel")
+                dilated = cv2.dilate(new_img, kernel, iterations=9)  # dilate , more the iteration more the dilation
+                print("After dilated")
+
+                # image, contours, hierarchy = cv2.findContours(dilated,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
+                contours, hierarchy = cv2.findContours(dilated,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
+                print("After contours")
 
 
-                frame = img2gray
+                for contour in contours:
+                    # get rectangle bounding contour
+                    [x, y, w, h] = cv2.boundingRect(contour)
+
+                    # Don't plot small false positives that aren't text
+                    if w < 35 and h < 35:
+                        continue
+
+                    # draw rectangle around contour on original image
+                    cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 255), 2)
+
+                frame = img
                 print("After frame")
 
-                imgbytes = cv2.imencode(".png", img2gray)[1].tobytes()
+                imgbytes = cv2.imencode(".png", frame)[1].tobytes()
                 print("After imgbytes")
 
                 # Debug statement
