@@ -64,9 +64,10 @@ def make_square(image_list, square_size=None):
     return ruudud
 
 ######## LOAD MODEL AND LABELS ########
-loaded_model = keras.models.load_model('./math_symbol_classifier_model_v3')
-# mnist_model = keras.models.load_model('./MNIST_model_training')
-labels_df = pd.read_csv('labels_df.csv', sep=';')
+loaded_model = keras.models.load_model('./math_symbol_classifier_model_v6')
+labels_df = pd.read_csv('labels_df_6.csv', sep=';')
+# loaded_model = keras.models.load_model('./math_symbol_classifier_model_v4')
+# labels_df = pd.read_csv('labels_df_4.csv', sep=';')
 labels_df.drop(labels_df.columns[0], axis=1, inplace=True)
 true_labels = np.array(labels_df['true_label'])
 
@@ -85,9 +86,9 @@ file_list_column = [
     ],
 ]
 
-formula_value_text = "This is your operation:"
+formula_value_text = "This is your operation: "
 
-# For now will only show the name of the file that was chosen
+# For now, this will only show the name of the file that was chosen
 image_viewer_column = [
     [sg.Text("Choose an image from the list on the left:")],
     [sg.Radio("Original", "Radio", size = (10,1), key="-ORIGINAL-")],
@@ -141,70 +142,25 @@ while True:
             if values["-ORIGINAL-"]:
                 window["-IMAGE-"].update(filename=filename)
 
-                # Debug statement
-                print("In original")
-
             elif values["-OPENCV-"]:
-                
 
-                # https://stackoverflow.com/questions/24385714/detect-text-region-in-image-using-opencv
-                # img = cv2.imread(filename)
-                # img2gray = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)[:,:,0]
-                # ret, mask = cv2.threshold(img2gray, 180, 255, cv2.THRESH_BINARY)
-                # image_final = cv2.bitwise_and(img2gray, img2gray, mask=mask)
-                # ret, new_img = cv2.threshold(image_final, 180, 255, cv2.THRESH_BINARY) # for black text , cv2.THRESH_BINARY_INV
-
-                # print("Before kernel")
-                # kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (3,
-                #                                          3))  # to manipulate the orientation of dilution , large x means horizonatally dilating  more, large y means vertically dilating more
-                
-                # print("After kernel")
-                # dilated = cv2.dilate(new_img, kernel, iterations=9)  # dilate , more the iteration more the dilation
-                # print("After dilated")
-
-                # # image, contours, hierarchy = cv2.findContours(dilated,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
-                # contours, hierarchy = cv2.findContours(dilated,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
-                # print("After contours")
-
-
-                # for contour in contours:
-                #     # get rectangle bounding contour
-                #     [x, y, w, h] = cv2.boundingRect(contour)
-
-                #     # Don't plot small false positives that aren't text
-                #     if w < 35 and h < 35:
-                #         continue
-
-                #     # draw rectangle around contour on original image
-                #     cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 255), 2)
-
-                # frame = img
-                # print("After frame")
-
-                print("In OPENCV")
                 infilename = os.path.normpath(filename)
-                print(f"filename: {filename}")
-                print(f"infilename: {infilename}")
+
                 img = cv2.imread(filename)
-                print("After reading IMG")
-                # print(img)
+
                 img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-                print("Before blur")
                 #blurimine vajalik et eemaldada müra
                 blur_img = cv2.GaussianBlur(img_gray,(5,5),0)
                 #thresholdimisega teeme hallist taustast valge ja tekstist musta
                 ret, thresh = cv2.threshold(blur_img,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 
-                print("Before dilation")
-
                 # paksendan jooni kõvasti, et lähedalolevad sümbolid (nt võrdusmärgid) muutuksid üheks
-                kernel = np.ones((14,14),np.uint8)
-                print("After kernel")
+                kernel = np.ones((13,13),np.uint8)
                 thresh_dilate = cv2.erode(thresh, kernel, iterations=1)
 
-                print("Before contours")
                 contours,hierarchy = cv2.findContours(thresh_dilate, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+                # contours,hierarchy = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
                 boxed_img = img.copy()
                 joined_boxes = []
                 for cnt in contours:
@@ -215,19 +171,12 @@ while True:
                     boxed_img = cv2.rectangle(boxed_img,(x,y),(x+w,y+h),(255,0,0),1)
 
                 imgbytes = cv2.imencode(".png", boxed_img)[1].tobytes()
-                print("After imgbytes")
-
-                # Debug statement
-                print("In OpenCV1")
 
                 window["-IMAGE-"].update(data=imgbytes)
-                                
-                print("Before ordering boxes")
+
                 order_boxes(joined_boxes)
-                print("Before get_crops")
                 crops = get_crops(thresh, joined_boxes, True)
 
-                print("Before making square boxes")
                 crops = make_square(crops)
                 tiny_crops = make_square(crops, 45)
 
@@ -237,15 +186,11 @@ while True:
 
                 predictions = loaded_model.predict(dilated_crops)
                 predictions = [np.array(prediction).argmax() for prediction in predictions]
-                print(predictions)
-                print(true_labels[predictions])
 
-                # new_operation_string = "This is your operation" + " ".join(true_labels[predictions])
-                new_operation_string = " ".join(true_labels[predictions])
+                new_operation_string = "This is your operation: " + " ".join(true_labels[predictions])
+                # new_operation_string = " ".join(true_labels[predictions])
                 window["-OPERATION-"].update(new_operation_string)
 
-                # Debug statement
-                print("In OpenCV2")
         except:
 
             print("Unexpected error:", sys.exc_info()[0])
